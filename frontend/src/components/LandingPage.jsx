@@ -53,8 +53,19 @@ const LandingPage = () => {
   }, [navigate, location]);
 
   const handleLogin = () => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    // For now, use test login until Google OAuth is configured
+    handleTestLogin();
+  };
+
+  const handleTestLogin = async () => {
+    try {
+      setIsProcessing(true);
+      await axios.post(`${API}/auth/debug-login`, {}, { withCredentials: true });
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      toast.error('Test login failed');
+      setIsProcessing(false);
+    }
   };
 
   if (isLoading || isProcessing) {
@@ -86,13 +97,23 @@ const LandingPage = () => {
                 InterviewAI
               </span>
             </div>
-            <Button
-              onClick={handleLogin}
-              data-testid="login-button"
-              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 rounded-full text-base font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105"
-            >
-              Sign In
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                onClick={handleLogin}
+                data-testid="login-button"
+                className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 rounded-full text-base font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                Sign In
+              </Button>
+              <Button
+                onClick={handleTestLogin}
+                data-testid="test-login-button"
+                variant="outline"
+                className="border-teal-600 text-teal-600 hover:bg-teal-50 px-8 py-6 rounded-full text-base font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                Test Login
+              </Button>
+            </div>
           </nav>
         </header>
 
@@ -119,14 +140,25 @@ const LandingPage = () => {
                   Get detailed insights to improve your performance.
                 </p>
 
-                <Button
-                  onClick={handleLogin}
-                  data-testid="get-started-button"
-                  size="lg"
-                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white px-10 py-7 rounded-full text-lg font-semibold shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
-                >
-                  Start Your Free Practice
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    onClick={handleLogin}
+                    data-testid="get-started-button"
+                    size="lg"
+                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white px-10 py-7 rounded-full text-lg font-semibold shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
+                  >
+                    Start Your Free Practice
+                  </Button>
+                  <Button
+                    onClick={handleTestLogin}
+                    data-testid="test-get-started-button"
+                    variant="outline"
+                    size="lg"
+                    className="border-teal-600 text-teal-600 hover:bg-teal-50 px-10 py-7 rounded-full text-lg font-semibold shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
+                  >
+                    Test Demo (Dev)
+                  </Button>
+                </div>
               </div>
 
               {/* Right Content - Feature Cards */}

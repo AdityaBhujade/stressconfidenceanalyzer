@@ -6,8 +6,8 @@ import os
 
 class InterviewAnalyzerAPITester:
     def __init__(self):
-        # Use the public endpoint from frontend .env
-        self.base_url = "https://interview-analyzer-6.preview.emergentagent.com/api"
+        # Use local development endpoint
+        self.base_url = "http://localhost:8000/api"
         self.session_token = None
         self.user_id = None
         self.tests_run = 0

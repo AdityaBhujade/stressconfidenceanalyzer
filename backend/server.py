@@ -147,17 +147,14 @@ async def create_session(request: Request, response: Response):
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
     
-    # Call Emergent auth service
-    import aiohttp
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            'https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data',
-            headers={'X-Session-ID': session_id}
-        ) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=401, detail="Invalid session ID")
-            
-            user_data = await resp.json()
+    # TODO: Replace with actual Google OAuth validation
+    # For now, simulate user data (replace with real Google OAuth)
+    user_data = {
+        'email': 'temp@example.com',
+        'name': 'Temporary User',
+        'picture': None,
+        'session_token': session_id  # Use provided session_id as token
+    }
     
     # Check if user exists
     existing_user = await db.users.find_one({"email": user_data['email']}, {"_id": 0})
@@ -191,13 +188,14 @@ async def create_session(request: Request, response: Response):
     session_dict['created_at'] = session_dict['created_at'].isoformat()
     await db.user_sessions.insert_one(session_dict)
     
-    # Set cookie
+    # Set cookie - adjusted for local development
+    is_development = os.environ.get('CORS_ORIGINS', '').startswith('http://localhost')
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
-        secure=True,
-        samesite="none",
+        secure=not is_development,  # False for localhost/HTTP, True for HTTPS
+        samesite="lax" if is_development else "none",  # lax for localhost
         max_age=7*24*60*60,
         path="/"
     )
@@ -217,6 +215,55 @@ async def logout(request: Request, response: Response):
     
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out successfully"}
+
+# Debug route to test auth without external service
+@api_router.post("/auth/debug-login")
+async def debug_login(response: Response):
+    """Simple test login for development - creates a test user session"""
+    # Create a test user
+    test_user = User(
+        email="test@example.com",
+        name="Test User",
+        picture=None
+    )
+    
+    # Check if test user exists
+    existing_user = await db.users.find_one({"email": test_user.email}, {"_id": 0})
+    if not existing_user:
+        user_dict = test_user.model_dump()
+        user_dict['created_at'] = user_dict['created_at'].isoformat()
+        await db.users.insert_one(user_dict)
+    else:
+        test_user = User(**existing_user)
+    
+    # Create session
+    import secrets
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    new_session = UserSession(
+        user_id=test_user.id,
+        session_token=session_token,
+        expires_at=expires_at
+    )
+    
+    session_dict = new_session.model_dump()
+    session_dict['expires_at'] = session_dict['expires_at'].isoformat()
+    session_dict['created_at'] = session_dict['created_at'].isoformat()
+    await db.user_sessions.insert_one(session_dict)
+    
+    # Set cookie for local development
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=7*24*60*60,
+        path="/"
+    )
+    
+    return {"user": test_user.model_dump(), "session_token": session_token}
 
 # Interview Categories Routes
 @api_router.get("/categories", response_model=List[InterviewCategory])
