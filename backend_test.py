@@ -98,13 +98,13 @@ class InterviewAnalyzerAPITester:
             email: "test.user.{timestamp}@example.com",
             name: "Test User {timestamp}",
             picture: "https://via.placeholder.com/150",
-            created_at: new Date()
+            created_at: new Date().toISOString()
         }});
         db.user_sessions.insertOne({{
             user_id: "{self.user_id}",
             session_token: "{self.session_token}",
-            expires_at: new Date(Date.now() + 7*24*60*60*1000),
-            created_at: new Date()
+            expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+            created_at: new Date().toISOString()
         }});
         """
         
